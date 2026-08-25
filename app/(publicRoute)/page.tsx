@@ -5,8 +5,8 @@ import MotionCar from "@/components/page/home/MotionCar"
 export default function Home() {
   return (
     <div >
-      <Card className="border-none bg-transparent py-8 shadow-none px-30">
-        <CardContent className="flex items-center justify-between p-0">
+      <Card className="border-none bg-transparent py-8 shadow-none px-30 rounded-none">
+        <CardContent className="flex items-center justify-between p-0 ">
           <div className="w-2/5">
             <h1 className="mb-2 text-6xl font-bold text-foreground">
               Explore the Finest <span className="text-red-500">Global</span>{" "}
