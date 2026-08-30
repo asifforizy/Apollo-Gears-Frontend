@@ -3,7 +3,7 @@ import jwt, { JwtPayload } from "jsonwebtoken"
 
 type Role = "admin" | "user" | "driver"
 
-const PUBLIC_PATHS = ["/login", "/signup", "/"]
+const PUBLIC_PATHS = ["/login", "/signup", "/cars"]
 
 const ROLE_ROUTES: Record<Role, string[]> = {
   admin: ["/admin"],
@@ -17,48 +17,47 @@ const DEFAULT_ROLE_REDIRECT: Record<Role, string> = {
   user: "/dashboard",
 }
 
-export default async function middleware(req: NextRequest) {
-  const accessToken = req.cookies.get("accessToken")?.value
+export default async function proxy(req: NextRequest) {
+  const { pathname } = req.nextUrl
 
-  let userRole: Role | null = null
-
-  if (accessToken) {
-    try {
-      const decodedToken = jwt.verify(
-        accessToken,
-        process.env.ACCESS_TOKEN_SECRET as string
-      ) as JwtPayload
-
-      userRole = decodedToken.role as Role
-    } catch {
-      const res = NextResponse.redirect(new URL("/login", req.url))
-      res.cookies.delete("accessToken")
-      res.cookies.delete("refreshToken")
-      return res
-    }
+  if (pathname === "/") {
+    return NextResponse.next()
   }
 
-  if (accessToken && ["/login", "/signup"].includes(req.nextUrl.pathname)) {
-    const redirectPath = userRole ? DEFAULT_ROLE_REDIRECT[userRole] : "/"
-    return NextResponse.redirect(new URL(redirectPath, req.url))
-  }
-
-  const isPublic = PUBLIC_PATHS.some((route) =>
-    req.nextUrl.pathname.startsWith(route)
-  )
+  const isPublic = PUBLIC_PATHS.some((route) => pathname.startsWith(route))
 
   if (isPublic) {
     return NextResponse.next()
   }
 
-  if (!userRole) {
+  const accessToken = req.cookies.get("accessToken")?.value
+
+  if (!accessToken) {
     return NextResponse.redirect(new URL("/login", req.url))
   }
 
+  let userRole: Role | null = null
+
+  try {
+    const decoded = jwt.verify(
+      accessToken,
+      process.env.ACCESS_TOKEN_SECRET as string
+    ) as JwtPayload
+    userRole = decoded.role as Role
+  } catch {
+    const res = NextResponse.redirect(new URL("/login", req.url))
+    res.cookies.delete("accessToken")
+    res.cookies.delete("refreshToken")
+    return res
+  }
+
+  if (pathname === "/login" || pathname === "/signup") {
+    const redirectPath = userRole ? DEFAULT_ROLE_REDIRECT[userRole] : "/"
+    return NextResponse.redirect(new URL(redirectPath, req.url))
+  }
+
   const allowedRoutes = ROLE_ROUTES[userRole] || []
-  const hasAccess = allowedRoutes.some((route) =>
-    req.nextUrl.pathname.startsWith(route)
-  )
+  const hasAccess = allowedRoutes.some((route) => pathname.startsWith(route))
 
   if (!hasAccess) {
     const redirectPath = DEFAULT_ROLE_REDIRECT[userRole]

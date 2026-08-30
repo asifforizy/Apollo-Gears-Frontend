@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
 import {
   Popover,
@@ -12,7 +13,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { logoutAction } from "@/app/(auth)/_actions/auth"
+import { logoutAction, getUser } from "@/app/(auth)/_actions/auth"
 
 const MenuIcon = () => (
   <svg
@@ -40,14 +41,32 @@ export interface NavbarLink {
 export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   logoText?: string
   logoHref?: string
-  navigationLinks?: NavbarLink[]
   isAuthenticated?: boolean
+  userRole?: string | null
 }
 
-const defaultLinks: NavbarLink[] = [
+const publicLinks: NavbarLink[] = [
   { href: "/", label: "Home" },
   { href: "/cars", label: "Cars" },
 ]
+
+const roleLinks: Record<string, NavbarLink[]> = {
+  admin: [
+    { href: "/", label: "Home" },
+    { href: "/cars", label: "Cars" },
+    { href: "/admin", label: "Admin" },
+  ],
+  driver: [
+    { href: "/", label: "Home" },
+    { href: "/cars", label: "Cars" },
+    { href: "/driver", label: "My Bids" },
+  ],
+  user: [
+    { href: "/", label: "Home" },
+    { href: "/cars", label: "Cars" },
+    { href: "/dashboard", label: "My Rents" },
+  ],
+}
 
 export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
   (
@@ -55,14 +74,32 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
       className,
       logoText = "Apollo Gears",
       logoHref = "/",
-      navigationLinks = defaultLinks,
       isAuthenticated = false,
+      userRole = null,
       ...props
     },
     ref
   ) => {
     const pathname = usePathname()
     const router = useRouter()
+    const [authState, setAuthState] = useState<{
+      isAuthenticated: boolean
+      role: string | null
+    }>({ isAuthenticated, role: userRole })
+
+    useEffect(() => {
+      getUser().then(setAuthState)
+    }, [])
+
+    const navigationLinks = authState.isAuthenticated && authState.role
+      ? roleLinks[authState.role] || publicLinks
+      : publicLinks
+
+    const dashboardHref = authState.role === "admin"
+      ? "/admin"
+      : authState.role === "driver"
+        ? "/driver"
+        : "/dashboard"
 
     const handleLogout = async () => {
       await logoutAction()
@@ -115,10 +152,10 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
 
           {/* Desktop Actions */}
           <div className="hidden items-center gap-2 md:flex">
-            {isAuthenticated ? (
+            {authState.isAuthenticated ? (
               <>
                 <Link
-                  href="/dashboard"
+                  href={dashboardHref}
                   className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
                 >
                   Dashboard
@@ -183,10 +220,10 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
 
                   <div className="my-1 border-t" />
 
-                  {isAuthenticated ? (
+                  {authState.isAuthenticated ? (
                     <>
                       <Link
-                        href="/dashboard"
+                        href={dashboardHref}
                         className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
                       >
                         Dashboard
