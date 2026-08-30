@@ -12,8 +12,34 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useActionState, useEffect } from "react"
+import { loginAction } from "../_actions/auth"
+import { useRouter } from "next/navigation"
 
 export default function LoginForm() {
+
+
+
+  const router = useRouter()
+  const[state, formAction, pending] = useActionState( loginAction, false)
+
+
+  useEffect(()=>{
+    if(!state) return;
+    if(!state.success){
+      alert(state.message)
+    }
+    if(state.success){
+      alert(state.message)
+      router.push("/")
+    }
+
+
+  },[state])
+
+
+
+
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
@@ -29,7 +55,7 @@ export default function LoginForm() {
       </CardHeader>
 
       <CardContent>
-        <form>
+        <form action={formAction}>
           <div className="flex flex-col gap-6">
             
             <div className="grid gap-2">
@@ -38,7 +64,8 @@ export default function LoginForm() {
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                name="email"
+                placeholder="name@example.com"
                 required
               />
             </div>
@@ -58,6 +85,7 @@ export default function LoginForm() {
               <Input
                 id="password"
                 type="password"
+                name="password"
                 required
               />
             </div>
@@ -70,6 +98,8 @@ export default function LoginForm() {
               type="button"
               variant="outline"
               className="w-full"
+              disabled={pending} 
+
             >
               Login with Google
             </Button>
