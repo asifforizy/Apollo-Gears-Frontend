@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 import {
   Popover,
@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/popover"
 
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { logoutAction } from "@/app/(auth)/_actions/auth"
 
 const MenuIcon = () => (
   <svg
@@ -35,11 +37,11 @@ export interface NavbarLink {
   label: string
 }
 
-export interface NavbarProps
-  extends React.HTMLAttributes<HTMLElement> {
+export interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
   logoText?: string
   logoHref?: string
   navigationLinks?: NavbarLink[]
+  isAuthenticated?: boolean
 }
 
 const defaultLinks: NavbarLink[] = [
@@ -54,11 +56,19 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
       logoText = "Apollo Gears",
       logoHref = "/",
       navigationLinks = defaultLinks,
+      isAuthenticated = false,
       ...props
     },
     ref
   ) => {
     const pathname = usePathname()
+    const router = useRouter()
+
+    const handleLogout = async () => {
+      await logoutAction()
+      router.push("/login")
+      router.refresh()
+    }
 
     return (
       <header
@@ -105,25 +115,39 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
 
           {/* Desktop Actions */}
           <div className="hidden items-center gap-2 md:flex">
-            <Link
-              href="/login"
-              className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
-            >
-              Login
-            </Link>
-
-            <Link
-              href="/signup"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Sign Up
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
+                >
+                  Dashboard
+                </Link>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/signup"
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu */}
           <div className="md:hidden">
             <Popover>
-              {/* Only ONE button */}
               <PopoverTrigger>
                 <MenuIcon />
                 <span className="sr-only">Open menu</span>
@@ -149,7 +173,7 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
                           "rounded-md px-3 py-2 text-sm font-medium",
                           isActive
                             ? "bg-primary/10 text-primary"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            : "text-muted-foreground hover:bg-muted"
                         )}
                       >
                         {link.label}
@@ -159,19 +183,39 @@ export const Navbar = React.forwardRef<HTMLElement, NavbarProps>(
 
                   <div className="my-1 border-t" />
 
-                  <Link
-                    href="/login"
-                    className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
-                  >
-                    Login
-                  </Link>
-
-                  <Link
-                    href="/signup"
-                    className="mt-1 rounded-md bg-primary px-3 py-2 text-center text-sm font-medium text-primary-foreground"
-                  >
-                    Sign Up
-                  </Link>
+                  {isAuthenticated ? (
+                    <>
+                      <Link
+                        href="/dashboard"
+                        className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+                      >
+                        Dashboard
+                      </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={handleLogout}
+                      >
+                        Logout
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Link
+                        href="/login"
+                        className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+                      >
+                        Login
+                      </Link>
+                      <Link
+                        href="/signup"
+                        className="mt-1 rounded-md bg-primary px-3 py-2 text-center text-sm font-medium text-primary-foreground"
+                      >
+                        Sign Up
+                      </Link>
+                    </>
+                  )}
                 </div>
               </PopoverContent>
             </Popover>

@@ -1,15 +1,14 @@
-import { Navbar } from "@/components/shared/Navbar";
+import { AuthNavbar } from "@/components/shared/AuthNavbar"
 
 export default function AuthLayout({
-    children
+  children,
 }: {
-    children: React.ReactNode
+  children: React.ReactNode
 }) {
-    return (
-        <div>
-            <Navbar></Navbar>
-            {children}
-
-        </div>
-    );
+  return (
+    <div>
+      <AuthNavbar />
+      {children}
+    </div>
+  )
 }
